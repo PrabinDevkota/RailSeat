@@ -37,7 +37,7 @@ Each landmark has a segment, a side (`L` or `R`) and a score. Summing scores bet
 
 A coach has a physical left and right, painted on the berth. `coach_orientation` is `1` in the normal direction and `-1` when the rake is reversed. Travel side is the physical side flipped by that sign. A window on the scenic travel side scores higher than a window on the quiet side, which scores higher than an aisle or a middle berth. The raw score is scaled to 0–5 for the ranker.
 
-The three routes are illustrative, drawn from public geography rather than a live timetable:
+The timetable is illustrative, drawn from public geography rather than a live feed. Fifteen services cover Mumbai, Pune, the Konkan coast and the Bengaluru side, including the return trains. The three that carry the scripted story are:
 
 - 11007 Deccan Express, CSMT to Pune, Bhor Ghat on the right after Karjat.
 - 10111 Konkan Kanya, CSMT to Madgaon, sea on the right going south.
@@ -166,7 +166,7 @@ Two replicas multiply the seat-map rate by about five against the primary servin
 
 ## 6. What the demo database contains
 
-`python -m app.cluster` loads the demo scale: 80 users, 13 runs, 52 coaches, 3,744 seats, about 4,500 bookings and about 1,900 ratings, fixed by `random.Random(7)`. Asha has a completed Deccan trip in S1 berth 7 that she has not rated, and a paid ticket on a cancelled Konkan run. Ravi has three completed trips. The hero Deccan run (the one the home page searches for tomorrow) leaves the lower seat numbers free so the map is usable. The full scale is a separate command and is what the 100,000-booking figure in the brief refers to. The demo scale is the one Docker starts, so a cold `compose up` finishes.
+A fresh `python -m app.cluster` loads the demo scale: 80 users, 29 stations, 15 trains, 157 runs, 628 coaches and 45,216 seats, with about 4,500 bookings and about 1,900 ratings, fixed by `random.Random(7)`. The bookings sit on the original three trains. The other twelve services are empty for the next ten days. Asha has a completed Deccan trip in S1 berth 7 that she has not rated, and a paid ticket on a cancelled Konkan run. Ravi has three completed trips. The hero Deccan run (the one the home page searches for tomorrow) leaves the lower seat numbers free so the map is usable. The full scale is a separate command and is what the 100,000-booking figure in the brief refers to. The demo scale is the one Docker starts, so a cold `compose up` finishes. The database already on disk is not wiped by a normal start.
 
 ## 7. Limitations
 
@@ -176,7 +176,7 @@ Two replicas multiply the seat-map rate by about five against the primary servin
 - Every class uses the sleeper bay diagram.
 - The payment gateway is a row in the ledger. There is no bank.
 - Rate limits are in-process. They reset when the primary restarts, and they do not coordinate across a future multi-writer design because there is only one writer.
-- The full 50-run catalogue is not what the live demo serves, by choice. The schema and the seed path are the same.
+- The 100,000-booking catalogue is not what the live demo serves, by choice. The schema and the seed path are the same.
 
 ## 8. What a next version would change
 

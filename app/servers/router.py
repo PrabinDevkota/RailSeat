@@ -20,12 +20,41 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.auth import read_session, sign_session
-from app.config import CLUSTER_FILE, INTERNAL, PORT, PRIMARY_URL, REPLICA_URLS
+from app.config import CLUSTER_FILE, DB_PATH, INTERNAL, PORT, PRIMARY_URL, REPLICA_URLS
+from app.db import connect
 from app.replication.failover import choose_primary, eligible_replicas
 from app.services.ticket_pdf import render_ticket_pdf
 
 WEB = Path(__file__).resolve().parents[1] / "web"
 templates = Jinja2Templates(directory=str(WEB / "templates"))
+
+
+def _attach_decisions(disputes: list[dict]) -> None:
+    """The running primary may predate the decision columns. Fill them from the log."""
+    missing = [row for row in disputes if not row.get("decision_outcome")]
+    if not missing:
+        return
+    conn = connect(DB_PATH, readonly=True)
+    try:
+        found = conn.execute(
+            """
+            SELECT dispute_id, outcome, reason, refund_pct
+            FROM dispute_decision
+            WHERE dispute_id IN ({})
+            ORDER BY decision_id
+            """.format(",".join("?" * len(missing))),
+            [row["dispute_id"] for row in missing],
+        ).fetchall()
+    finally:
+        conn.close()
+    by_id = {row["dispute_id"]: row for row in found}
+    for dispute in missing:
+        decision = by_id.get(dispute["dispute_id"])
+        if decision is None:
+            continue
+        dispute["decision_outcome"] = decision["outcome"]
+        dispute["decision_reason"] = decision["reason"]
+        dispute["decision_pct"] = decision["refund_pct"]
 
 
 @dataclass
@@ -553,10 +582,34 @@ def create_router() -> FastAPI:
         if not user or user.get("role") != "ADMIN":
             return RedirectResponse("/", status_code=303)
         disputes = (await call(request, "GET", "/admin/disputes", read=False)).json().get("disputes", [])
+        _attach_decisions(disputes)
+        disputes.sort(key=lambda row: (0 if row.get("status") in ("OPEN", "UNDER_REVIEW") else 1, -int(row.get("dispute_id") or 0)))
         ledger = (await call(request, "GET", "/admin/ledger", read=False)).json()
+        node_metrics = {}
+        try:
+            measured = await call(request, "GET", "/admin/node-metrics", read=False)
+            if measured.status_code == 200:
+                node_metrics = measured.json()
+        except httpx.HTTPError:
+            node_metrics = {}
         return page(
             request, "admin.html", title="Admin", user=user,
             peers=cluster.snapshot(), disputes=disputes, ledger=ledger, event=cluster.event,
+            node_metrics=node_metrics,
+            open_count=sum(1 for row in disputes if row.get("status") in ("OPEN", "UNDER_REVIEW")),
+            reasons={
+                "TRAIN_CANCELLED": "Train cancelled",
+                "COACH_NOT_ATTACHED": "Coach not attached",
+                "SEAT_UNUSABLE": "Seat unusable",
+                "WRONG_DESCRIPTION": "Wrong description",
+            },
+            outcomes={"REFUND_FULL": "Refunded in full", "REFUND_PARTIAL": "Partial refund", "REJECTED": "Rejected"},
+            statuses={
+                "OPEN": "Waiting for a decision",
+                "UNDER_REVIEW": "Under review",
+                "AUTO_RESOLVED": "Resolved automatically",
+                "RESOLVED": "Decided",
+            },
         )
 
     @app.api_route("/bookings/{path:path}", methods=["POST"])
@@ -595,14 +648,26 @@ def create_router() -> FastAPI:
         return {"ok": True}
 
     @app.get("/admin/metrics")
-    async def metrics():
-        return {
+    async def metrics(request: Request):
+        body = {
             "qps_seen": cluster.qps,
             "failovers": cluster.fails,
             "primary": cluster.primary_url,
             "peers": cluster.snapshot(),
             "event": cluster.event,
         }
+        user = session(request)
+        if user and user.get("role") == "ADMIN":
+            try:
+                measured = await call(request, "GET", "/admin/node-metrics", read=False)
+                if measured.status_code == 200:
+                    node = measured.json()
+                    body["lock_waits"] = node.get("lock_waits", 0)
+                    body["book_ok"] = node.get("book_ok", 0)
+                    body["book_fail"] = node.get("book_fail", 0)
+            except httpx.HTTPError:
+                pass
+        return body
 
     async def _proxy(request: Request, path: str):
         body = await request.body()

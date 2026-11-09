@@ -173,23 +173,34 @@ function setupSeats() {
   const wait = document.getElementById("wait");
   if (wait) {
     wait.addEventListener("click", async () => {
+      const note = document.getElementById("wait-status");
       const form = new FormData(alloc);
       const prefs = {};
       ["window", "scenic", "shade", "lower"].forEach((key) => {
         if (form.get(key)) prefs[key] = true;
       });
+      const coachClass = form.get("coach_class") || "SL";
       wait.disabled = true;
+      if (note) {
+        note.hidden = false;
+        note.textContent = "Joining the waitlist…";
+      }
       try {
         await postJSON("/waitlist", {
           run_id: data.run_id,
           from_idx: data.from_idx,
           to_idx: data.to_idx,
-          coach_class: form.get("coach_class") || "SL",
+          coach_class: coachClass,
           preferences: prefs,
         });
-        banner("You are on the waitlist. A cancellation promotes the oldest matching passenger.");
+        wait.textContent = "On the waitlist";
+        if (note) {
+          note.textContent = "You are on the " + coachClass + " waitlist. When a berth opens, the hold appears in Messages.";
+        }
       } catch (error) {
-        banner(error.message, true);
+        const text = error.message || "Could not join the waitlist.";
+        if (note) note.textContent = text;
+        banner(text, true);
         wait.disabled = false;
       }
     });

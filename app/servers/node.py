@@ -611,11 +611,17 @@ def create_app(db_path, role: str = "primary", node_url: str = "http://127.0.0.1
         try:
             rows = conn.execute(
                 """
-                SELECT d.*, u.name AS passenger, p.amount, p.state AS payment_state
+                SELECT d.*, u.name AS passenger, p.amount, p.state AS payment_state,
+                       dd.outcome AS decision_outcome, dd.reason AS decision_reason,
+                       dd.refund_pct AS decision_pct
                 FROM dispute d
                 JOIN user u ON u.user_id = d.user_id
                 JOIN payment p ON p.payment_id = d.payment_id
-                ORDER BY d.dispute_id DESC
+                LEFT JOIN dispute_decision dd ON dd.decision_id = (
+                    SELECT MAX(decision_id) FROM dispute_decision WHERE dispute_id = d.dispute_id
+                )
+                ORDER BY CASE WHEN d.status IN ('OPEN', 'UNDER_REVIEW') THEN 0 ELSE 1 END,
+                         d.dispute_id DESC
                 LIMIT 100
                 """
             ).fetchall()
