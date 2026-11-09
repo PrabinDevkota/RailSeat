@@ -251,7 +251,7 @@ def create_router() -> FastAPI:
         else:
             context["health"] = "Primary unreachable"
         if user and context["user"] is None:
-            context["user"] = {"user_id": user["user_id"], "role": user["role"], "name": user["role"].title()}
+            context["user"] = {"user_id": user["user_id"], "role": "PASSENGER", "name": "Passenger"}
         return templates.TemplateResponse(request, name, context)
 
     async def viewer(request: Request):
@@ -260,8 +260,20 @@ def create_router() -> FastAPI:
             return None
         response = await call(request, "GET", "/me", read=True)
         if response.status_code != 200:
-            return {"user_id": user["user_id"], "role": user["role"], "name": "Passenger"}
+            return {"user_id": user["user_id"], "role": "PASSENGER", "name": "Passenger"}
         return response.json()
+
+    async def require_admin(request: Request):
+        """The database role, read from the primary. The session cookie is not enough."""
+        if not session(request):
+            return None
+        response = await call(request, "GET", "/me", read=False)
+        if response.status_code != 200:
+            return None
+        body = response.json()
+        if body.get("role") != "ADMIN":
+            return None
+        return body
 
     @app.get("/")
     async def home(request: Request, error: str | None = None):
@@ -576,10 +588,14 @@ def create_router() -> FastAPI:
     async def uploads(request: Request):
         return await _proxy(request, "/uploads")
 
+    @app.get("/health")
+    async def health():
+        return {"ok": True}
+
     @app.get("/admin")
     async def admin(request: Request):
-        user = await viewer(request)
-        if not user or user.get("role") != "ADMIN":
+        user = await require_admin(request)
+        if not user:
             return RedirectResponse("/", status_code=303)
         disputes = (await call(request, "GET", "/admin/disputes", read=False)).json().get("disputes", [])
         _attach_decisions(disputes)
@@ -630,12 +646,13 @@ def create_router() -> FastAPI:
 
     @app.api_route("/admin/disputes/{path:path}", methods=["POST"])
     async def decide(path: str, request: Request):
+        if not await require_admin(request):
+            return JSONResponse({"message": "Admin only"}, status_code=403)
         return await _proxy(request, "/admin/disputes/" + path)
 
     @app.post("/admin/demo/kill-primary")
     async def kill_primary(request: Request):
-        user = await viewer(request)
-        if not user or user.get("role") != "ADMIN":
+        if not await require_admin(request):
             return JSONResponse({"message": "Admin only"}, status_code=403)
         try:
             await app.state.client.post(
@@ -649,6 +666,8 @@ def create_router() -> FastAPI:
 
     @app.get("/admin/metrics")
     async def metrics(request: Request):
+        if not await require_admin(request):
+            return JSONResponse({"message": "Admin only"}, status_code=403)
         body = {
             "qps_seen": cluster.qps,
             "failovers": cluster.fails,
@@ -656,17 +675,15 @@ def create_router() -> FastAPI:
             "peers": cluster.snapshot(),
             "event": cluster.event,
         }
-        user = session(request)
-        if user and user.get("role") == "ADMIN":
-            try:
-                measured = await call(request, "GET", "/admin/node-metrics", read=False)
-                if measured.status_code == 200:
-                    node = measured.json()
-                    body["lock_waits"] = node.get("lock_waits", 0)
-                    body["book_ok"] = node.get("book_ok", 0)
-                    body["book_fail"] = node.get("book_fail", 0)
-            except httpx.HTTPError:
-                pass
+        try:
+            measured = await call(request, "GET", "/admin/node-metrics", read=False)
+            if measured.status_code == 200:
+                node = measured.json()
+                body["lock_waits"] = node.get("lock_waits", 0)
+                body["book_ok"] = node.get("book_ok", 0)
+                body["book_fail"] = node.get("book_fail", 0)
+        except httpx.HTTPError:
+            pass
         return body
 
     async def _proxy(request: Request, path: str):

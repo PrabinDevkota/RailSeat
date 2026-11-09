@@ -33,7 +33,7 @@
         Account
       </a>
       {% endif %}
-      {% if user and user.role == 'ADMIN' %}<a href="/admin" {% if request.url.path == '/admin' %}aria-current="page"{% endif %}>Queue</a>{% endif %}
+      {% if user and user.role == 'ADMIN' %}<a href="/admin" aria-label="Arbitrator queue" {% if request.url.path == '/admin' %}aria-current="page"{% endif %}>Queue</a>{% endif %}
     </nav>
     <div class="who">
       {% if health %}<span class="health">{{ health }}</span>{% endif %}

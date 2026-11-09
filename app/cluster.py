@@ -52,7 +52,7 @@ def main():
     deadline = time.time() + 40
     while time.time() < deadline:
         try:
-            response = httpx.get("http://127.0.0.1:8080/admin/metrics", timeout=1)
+            response = httpx.get("http://127.0.0.1:8080/health", timeout=1)
             if response.status_code == 200:
                 break
         except httpx.HTTPError:

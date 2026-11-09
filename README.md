@@ -93,9 +93,9 @@ Each node is one SQLite file. There is no separate database server and no ORM.
 | --- | --- | --- | --- |
 | Asha | asha@railseat.dev | railseat | Book, pay, rate a finished trip, dispute the cancelled Konkan ticket |
 | Ravi | ravi@railseat.dev | railseat | A frequent traveller with completed trips |
-| Meera | meera@railseat.dev | railseat | Admin. Opens Queue for disputes, the ledger, and failover |
+| Meera | meera@railseat.dev | railseat | The only admin. See [Admin](#admin) |
 
-Create account on the home page registers a new passenger. The form checks name, email, a password of 8 to 72 characters, age and gender. That account cannot become an admin. Account, after sign-in, changes the password and the window, scenic, shade, lower-berth and toilet preferences used by Choose for me.
+Create account on the home page registers a new passenger. The form checks name, email, a password of 8 to 72 characters, age and gender. That account cannot become an admin. The sign-in shortcuts are Asha and Ravi. Meera is not offered there. Account, after sign-in, changes the password and the window, scenic, shade, lower-berth and toilet preferences used by Choose for me.
 
 Asha’s account already holds a completed Deccan trip in coach S1, berth 7, which she has not rated, and a paid ticket on a cancelled Konkan run. Raising a dispute on that ticket refunds the full fare without an arbitrator. A ticket page and its PDF open only for the passenger who owns the booking, or for an admin.
 
@@ -108,7 +108,18 @@ Asha’s account already holds a completed Deccan trip in coach S1, berth 7, whi
 5. **Bookings and messages.** Every ticket has a booking number `RS` plus six digits. Download PDF on the ticket, or from Bookings, gives a one-page slip with boarding time, arrival time and date. Waitlist promotions and dispute decisions land in Messages.
 6. **Choose for me.** Window, scenic side, shade and lower berth are ranked, then the winning berth is held on the primary. Joining the waitlist promotes the oldest match when a berth is cancelled or a hold expires.
 7. **Journey guide.** From a berth, the guide lists landmarks on your side and the other side, and which side the sun is on.
-8. **Queue.** Meera sees replica lag, ledger balances, and open disputes. Stopping the primary promotes the replica with the highest applied log position after three missed heartbeats.
+
+## Admin
+
+Only a row with role `ADMIN` can open the queue. The role is read from the user table on the primary. The session cookie is not enough, and creating an account never sets that role. The demo admin is Meera Iyer, `meera@railseat.dev`, password `railseat`. Type that address on the sign-in form. There is no Meera button.
+
+After she signs in, the header gains a link named Queue, with the accessible name "Arbitrator queue". It sits after Account. While she is on the page, that link is the current page. Asha, Ravi, and every other account do not get the link. It is left out of the HTML, so it is not in the tab order and a screen reader does not announce it. Visiting `/admin` while signed in as anyone else, or while signed out, returns to the plan page. Dispute decisions, `/admin/metrics`, and Stop the primary answer `403` with "Admin only".
+
+The page has one heading, Queue.
+
+- Claims waiting for a decision come first. Each one has three buttons: Refund in full, Refund half, and Reject. Closed claims stay on the page with the ruling, so a rejected claim is not mistaken for a stuck one.
+- Replication lists each node, whether it is up, and the log position it has applied. Stop the primary is the failover demo. After three missed heartbeats the replica with the highest applied position becomes the writer.
+- The ledger lists escrow, the gateway, railway revenue, and passenger wallets. Every transaction should sum to zero.
 
 ## Routes in the demo
 

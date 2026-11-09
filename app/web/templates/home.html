@@ -63,7 +63,7 @@
 {% if not user %}
 <section class="panel" id="sign-in">
   <h2>Sign in</h2>
-  <p class="note">Demo password is railseat. Meera opens the arbitrator queue. <a href="/signup">Create an account</a> if you are new.</p>
+  <p class="note">Demo password is railseat. <a href="/signup">Create an account</a> if you are new.</p>
   {% if error %}<p class="banner bad">{{ error }}</p>{% endif %}
   <form id="login" method="post" action="/login" class="stack">
     <label>Email <input name="email" type="email" required value="asha@railseat.dev" autocomplete="username"></label>
@@ -73,7 +73,6 @@
   <div class="row-actions">
     <button class="ghost" type="button" data-email="asha@railseat.dev">Asha</button>
     <button class="ghost" type="button" data-email="ravi@railseat.dev">Ravi</button>
-    <button class="ghost" type="button" data-email="meera@railseat.dev">Meera</button>
   </div>
 </section>
 {% endif %}
