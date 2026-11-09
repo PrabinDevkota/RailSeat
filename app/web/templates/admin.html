@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block body %}
+<p class="kicker">Cluster</p>
+<h1>Replication and the queue</h1>
+<p class="lede">Writes go to the primary. A read is served by a replica only when its applied log has caught the passenger’s last write.</p>
+<div class="grid cards">
+  {% for peer in peers %}
+  <article class="card">
+    <span class="kicker">{{ peer.role }}</span>
+    <strong>{{ 'up' if peer.healthy else 'down' }}</strong>
+    <em>{{ peer.url }}</em>
+    <em>LSN {{ peer.applied_lsn }}</em>
+  </article>
+  {% endfor %}
+</div>
+{% if event %}
+  <p class="note">Last failover: {{ event.detail }} in {{ '%.2f'|format(event.seconds) }}s. Missing LSN window starts at {{ event.gap }}.</p>
+{% endif %}
+<p style="margin-top:12px"><button class="ghost" id="kill-primary" type="button">Stop the primary</button></p>
+
+<section style="margin-top:28px">
+  <h2>Ledger</h2>
+  <p class="note">{% if ledger.balanced %}Every transaction sums to zero.{% else %}Unbalanced transactions: {{ ledger.unbalanced }}.{% endif %}</p>
+  <table class="table">
+    <thead><tr><th>Account</th><th class="num">Balance</th></tr></thead>
+    <tbody>
+    {% for row in ledger.accounts %}
+      <tr><td>{{ row.account }}</td><td class="num">{{ '%.2f'|format(row.balance) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section style="margin-top:28px">
+  <h2>Disputes</h2>
+  {% if not disputes %}
+    <p class="note">The queue is empty.</p>
+  {% endif %}
+  {% for dispute in disputes %}
+  <article class="panel" style="padding:14px;margin-top:10px">
+    <p class="kicker">{{ dispute.status }} · {{ dispute.reason }}</p>
+    <h3>{{ dispute.passenger }} · booking {{ dispute.booking_id }}</h3>
+    <p class="note">{{ dispute.detail or 'No note.' }} Payment {{ dispute.payment_state }}. {% if dispute.sla_due_at %}SLA {{ dispute.sla_due_at }}.{% endif %}</p>
+    {% if dispute.status in ('OPEN', 'UNDER_REVIEW') %}
+    <div class="row-actions" style="margin-top:8px">
+      <button class="solid" type="button" data-decide="{{ dispute.dispute_id }}" data-outcome="REFUND_FULL" data-reason="Full refund">Refund in full</button>
+      <button class="ghost" type="button" data-decide="{{ dispute.dispute_id }}" data-outcome="REFUND_PARTIAL" data-pct="50" data-reason="Half refund">Refund half</button>
+      <button class="ghost" type="button" data-decide="{{ dispute.dispute_id }}" data-outcome="REJECTED" data-reason="Claim rejected">Reject</button>
+    </div>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

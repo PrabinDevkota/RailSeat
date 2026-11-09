@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block body %}
+<p class="kicker">{{ run.train_no }} · {{ run.route_name }}</p>
+<h1>{{ run.train_name }}</h1>
+<div class="leg seat-leg">
+  <div>
+    <strong>{{ origin.dep or '—' }}</strong>
+    <span>{{ origin.code }}</span>
+    <em>{{ origin.name }}</em>
+  </div>
+  <div class="dur">{{ run.run_date }}<span>{% if run.coach_orientation == -1 %}Rake reversed{% else %}Normal orientation{% endif %}</span></div>
+  <div class="arr">
+    <strong>{{ dest.arr or '—' }}</strong>
+    <span>{{ dest.code }}</span>
+    <em>{{ dest.name }}</em>
+  </div>
+</div>
+<p class="lede">Scenic side on this stretch: {{ 'right' if scenic == 'R' else 'left' }}.
+  {% if run.coach_orientation == -1 %}The rake is reversed, so the coach walls are swapped against the direction of travel.{% else %}The coach faces the direction of travel.{% endif %}
+  {% if run.status not in ('SCHEDULED', 'RUNNING') %}This run is {{ run.status|lower }} and is not open for booking.{% endif %}</p>
+
+<div class="coach-row">
+  {% for coach in coaches %}
+  <a class="coach-pill {% if coach.coach_no == current %}on{% endif %}"
+     href="/runs/{{ run.run_id }}?from_idx={{ origin.stop_idx }}&to_idx={{ dest.stop_idx }}&coach={{ coach.coach_no }}">
+    <strong>{{ coach.coach_no }}</strong>
+    <span>{{ coach.coach_class }} · ₹{{ '%.0f'|format(coach.fare) }}</span>
+    <em>{{ coach.free }} free</em>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="workspace">
+  <div class="plan">
+    <div class="plan-head"><span>Bay</span><span>Lower · middle · upper</span><span></span><span>Side lower · side upper</span></div>
+    <p class="end">Toward the engine · coach {{ current }}</p>
+    {% for bay in bays %}
+    <section class="bay">
+      <span class="bay-no">{{ loop.index }}</span>
+      <div class="compartment">
+        {% for seat in bay.main %}{% include "berth.html" %}{% endfor %}
+      </div>
+      <div class="aisle"></div>
+      <div class="side">
+        {% for seat in bay.side %}{% include "berth.html" %}{% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+    <div class="legend">
+      <span><i class="swatch" style="background:#0e6b57"></i>Scenic</span>
+      <span><i class="swatch" style="background:#6fbfa6"></i>Good</span>
+      <span><i class="swatch" style="background:#d7ebe3"></i>Low</span>
+      <span><i class="swatch" style="background:#ddd6cc"></i>Taken</span>
+      <span><i class="mark win"></i> Window</span>
+      <span>L ladies · S senior</span>
+    </div>
+  </div>
+  <aside class="panel detail">
+    <p class="quiet" id="placeholder">Select a berth. Darker green is a stronger view. A square on the number means a window.</p>
+    <div id="card" hidden></div>
+    {% if run.status not in ('SCHEDULED', 'RUNNING') %}
+    <p class="banner bad">Berths on this run are not for sale.</p>
+    {% elif user %}
+    <form id="alloc" class="stack">
+      <h3>Choose for me</h3>
+      <p class="quiet">Picks a free berth from the view, traveller ratings and the boxes you tick, then holds it for five minutes.</p>
+      <label class="check"><input type="checkbox" name="window" checked> Window</label>
+      <label class="check"><input type="checkbox" name="scenic" checked> Scenic side</label>
+      <label class="check"><input type="checkbox" name="shade"> Shade</label>
+      <label class="check"><input type="checkbox" name="lower"> Lower berth</label>
+      <label>Class
+        <select name="coach_class">
+          <option value="">Any</option>
+          <option>SL</option><option>3A</option><option>2A</option><option>1A</option>
+        </select>
+      </label>
+      <button class="solid" type="submit">Allocate a berth</button>
+      <button class="ghost" id="wait" type="button">Join the waitlist instead</button>
+    </form>
+    {% else %}
+    <p class="note"><a href="/#sign-in">Sign in</a> to hold a berth.</p>
+    {% endif %}
+  </aside>
+</div>
+<script id="seat-data" type="application/json">{{ seats_json|safe }}</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+[
+  {
+    "replicas": 0,
+    "reads": 24,
+    "writes": 0,
+    "errors": 0,
+    "seconds": 2.5,
+    "reads_per_second": 9.6
+  },
+  {
+    "replicas": 1,
+    "reads": 72,
+    "writes": 0,
+    "errors": 0,
+    "seconds": 2.5,
+    "reads_per_second": 28.8
+  },
+  {
+    "replicas": 2,
+    "reads": 133,
+    "writes": 8,
+    "errors": 0,
+    "seconds": 2.5,
+    "reads_per_second": 53.2
+  },
+  {
+    "replicas": 3,
+    "reads": 132,
+    "writes": 8,
+    "errors": 0,
+    "seconds": 2.5,
+    "reads_per_second": 52.8
+  }
+]

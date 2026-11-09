@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Messages</h1>
+{% if swaps %}
+<section class="board">
+  <div class="board-head"><h2>Seat offers</h2></div>
+  {% for swap in swaps %}
+  <article class="panel pad">
+    <p><strong>{{ swap.offer_name }}</strong> offers {{ swap.offer_coach }} {{ swap.offer_seat }} {{ swap.offer_berth }}
+      (booking {{ swap.offer_booking }}) for {{ swap.target_coach }} {{ swap.target_seat }} {{ swap.target_berth }}
+      (booking {{ swap.target_booking }}).</p>
+    {% if swap.can_accept %}
+      <button class="solid accept-swap" type="button" data-swap="{{ swap.swap_id }}">Accept swap</button>
+    {% else %}
+      <p class="note">Waiting for {{ swap.target_name }} to accept.</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% if not messages and not swaps %}
+  <p class="lede">Nothing yet. A waitlist promotion, a dispute decision, or a seat offer lands here.</p>
+{% endif %}
+<div class="grid" style="margin-top:16px">
+  {% for message in messages %}
+  <article class="panel" style="padding:14px">
+    <p>{{ message.body }}</p>
+    <p class="meta">{{ message.created_at }}</p>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

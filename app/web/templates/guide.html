@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+<p class="kicker">{{ guide.coach_no }} berth {{ guide.seat_no }} · {{ 'right' if guide.travel_side == 'R' else 'left' }} side</p>
+<h1>{{ guide.train_name }}</h1>
+<p class="lede">{{ guide.sun.note }} {% if guide.sun_on_this_seat %}This berth faces it.{% else %}This berth is on the other side.{% endif %}</p>
+<div class="panel" style="padding:8px 16px;margin-top:16px">
+  {% for item in guide['items'] %}
+  <article class="guide-item {% if item.on_your_side %}yours{% endif %}">
+    <strong>{{ item.time }}–{{ item.until }}</strong>
+    <div>
+      <p>After {{ item.after_station }}. {{ item.description }}</p>
+      <p class="meta">{{ 'Your side' if item.on_your_side else 'The other side' }} · {{ item.kind }} · score {{ item.score }}</p>
+    </div>
+  </article>
+  {% endfor %}
+  {% if not guide['items'] %}<p class="note">No landmarks are recorded on this stretch.</p>{% endif %}
+</div>
+{% endblock %}

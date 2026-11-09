@@ -1,0 +1,63 @@
+<form class="panel search" action="/search" method="get" id="find">
+  <label class="schedule">
+    <span class="field-ico list" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M8 7h11M8 12h11M8 17h11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4.5" cy="7" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="17" r="1" fill="currentColor"/></svg>
+    </span>
+    <span class="field-copy">
+      <span class="field-label">Train schedule</span>
+      <select id="schedule">
+        <option value="">Pick a scheduled train, or set the stations yourself</option>
+        {% for run in schedules or [] %}
+        <option value="{{ run.from_code }}|{{ run.to_code }}|{{ run.run_date }}">
+          {{ run.train_no }} {{ run.train_name }} · {{ run.run_date }} · {{ run.dep or '—' }} {{ run.from_code }} → {{ run.arr or '—' }} {{ run.to_code }}
+        </option>
+        {% endfor %}
+      </select>
+    </span>
+  </label>
+  <div class="search-main">
+    <label>
+      <span class="field-ico pin" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 21s6.5-5.6 6.5-10.2a6.5 6.5 0 1 0-13 0C5.5 15.4 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10.5" r="2.1" fill="currentColor"/></svg>
+      </span>
+      <span class="field-copy">
+        <span class="field-label">From</span>
+        <select name="from" required>
+          {% for station in stations %}
+          <option value="{{ station.code }}" {% if station.code == origin %}selected{% endif %}>{{ station.name }} ({{ station.code }})</option>
+          {% endfor %}
+        </select>
+      </span>
+    </label>
+    <button class="swap" type="button" id="swap" aria-label="Swap origin and destination">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8h11l-3.2-3.2M17 16H6l3.2 3.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <label>
+      <span class="field-ico flag" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 4v16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6 5h11l-2.2 3.5L17 12H6" fill="currentColor" opacity="0.18" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="field-copy">
+        <span class="field-label">To</span>
+        <select name="to" required>
+          {% for station in stations %}
+          <option value="{{ station.code }}" {% if station.code == dest %}selected{% endif %}>{{ station.name }} ({{ station.code }})</option>
+          {% endfor %}
+        </select>
+      </span>
+    </label>
+    <label class="when">
+      <span class="field-ico cal" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 3.5v4M16 3.5v4M4 10h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      <span class="field-copy">
+        <span class="field-label">Departure</span>
+        <input name="date" type="date" value="{{ when }}" required>
+        <span class="date-chips">
+          <button class="chip-date" type="button" data-offset="1">Tomorrow</button>
+          <button class="chip-date" type="button" data-offset="2">Day after</button>
+        </span>
+      </span>
+    </label>
+    <button class="solid search-go" type="submit">Search</button>
+  </div>
+</form>

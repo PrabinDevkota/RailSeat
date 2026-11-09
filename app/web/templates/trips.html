@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set label = {
+  'HELD': 'On hold',
+  'CONFIRMED': 'Confirmed',
+  'CANCELLED': 'Cancelled',
+  'COMPLETED': 'Completed',
+  'EXPIRED': 'Expired'
+} %}
+{% block body %}
+<p class="kicker">Your account</p>
+<h1>Bookings</h1>
+{% if not trips %}
+  <p class="lede">No bookings yet. Search a train and reserve a berth. It stays on hold for five minutes until you pay.</p>
+{% endif %}
+<div class="board">
+  {% for trip in trips %}
+  <div class="board-row">
+    <a class="open" href="/ticket/{{ trip.booking_id }}">
+      <span class="tno">{{ trip.train_no }}</span>
+      <span class="board-name">
+        <strong>{{ trip.train_name }}</strong>
+        <em>{{ trip.from_code }} → {{ trip.to_code }} · {{ trip.coach_no }} {{ trip.seat_no }} {{ trip.coach_class }}</em>
+      </span>
+      <span class="status {{ trip.status|lower }}">{{ label.get(trip.status, trip.status) }}</span>
+      <span class="date">{{ trip.run_date }}</span>
+      <span class="fare-line">₹{{ '%.0f'|format(trip.fare) }}</span>
+    </a>
+    {% if trip.downloadable %}<a class="ghost" href="/ticket/{{ trip.booking_id }}/pdf">PDF</a>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

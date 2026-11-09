@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="panel auth">
+  <h1>{{ user.name }}</h1>
+  <p class="note">{{ user.email }} · {{ user.role }} · wallet ₹{{ '%.0f'|format(user.wallet or 0) }}</p>
+  {% if error %}<p class="banner bad">{{ error }}</p>{% endif %}
+  {% if saved %}<p class="banner">{{ saved }}</p>{% endif %}
+
+  <h2>Seat preferences</h2>
+  <p class="note">Used when you choose “Choose for me”. A blank toilet preference is ignored.</p>
+  <form method="post" action="/account/preferences" class="stack">
+    <label class="check"><input type="checkbox" name="pref_window" {% if user.pref_window %}checked{% endif %}> Window</label>
+    <label class="check"><input type="checkbox" name="pref_scenic" {% if user.pref_scenic %}checked{% endif %}> Scenic side</label>
+    <label class="check"><input type="checkbox" name="pref_shade" {% if user.pref_shade %}checked{% endif %}> Shade</label>
+    <label class="check"><input type="checkbox" name="pref_lower" {% if user.pref_lower %}checked{% endif %}> Lower berth</label>
+    <label>Toilet
+      <select name="pref_toilet">
+        <option value="">No preference</option>
+        <option value="NEAR" {% if user.pref_toilet == 'NEAR' %}selected{% endif %}>Near</option>
+        <option value="FAR" {% if user.pref_toilet == 'FAR' %}selected{% endif %}>Far</option>
+      </select>
+    </label>
+    <button class="solid" type="submit">Save preferences</button>
+  </form>
+</section>
+
+<section class="panel auth gap">
+  <h2>Password</h2>
+  <form method="post" action="/account/password" class="stack">
+    <label>Current password <input name="current_password" type="password" required autocomplete="current-password"></label>
+    <label>New password <input name="new_password" type="password" required minlength="8" maxlength="72" autocomplete="new-password"></label>
+    <button class="solid" type="submit">Update password</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+<button type="button"
+  class="berth {{ seat.band }}{% if seat.taken %} taken{% endif %}{% if seat.broken or seat.maintenance %} bad{% endif %}"
+  data-seat="{{ seat.seat_id }}"
+  {% if seat.taken or seat.broken or seat.maintenance %}data-blocked="1"{% endif %}
+  aria-pressed="false">
+  <span class="no">{{ seat.seat_no }}{% if seat.is_window %}<i class="mark win" title="Window"></i>{% endif %}</span>
+  <span class="type">{{ seat.berth_type }}{% if seat.quota == 'LADIES' %} · L{% elif seat.quota == 'SENIOR' %} · S{% endif %}</span>
+</button>

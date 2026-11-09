@@ -1,0 +1,72 @@
+services:
+  primary:
+    build: .
+    environment:
+      RAILSEAT_ROLE: primary
+      RAILSEAT_DB: /data/primary.db
+      NODE_URL: http://primary:8000
+      PRIMARY_URL: http://primary:8000
+      SEED_SCALE: demo
+      PORT: "8000"
+    volumes:
+      - railseat:/data
+    command: ["python", "-m", "app.servers.node", "--role", "primary", "--db", "/data/primary.db", "--port", "8000", "--node-url", "http://primary:8000"]
+  replica1:
+    build: .
+    environment:
+      RAILSEAT_ROLE: replica
+      RAILSEAT_DB: /data/replica1.db
+      NODE_URL: http://replica1:8001
+      PRIMARY_URL: http://primary:8000
+      PORT: "8001"
+    volumes:
+      - railseat:/data
+    depends_on:
+      - primary
+    command: ["python", "-m", "app.servers.replica", "--role", "replica", "--db", "/data/replica1.db", "--port", "8001", "--node-url", "http://replica1:8001", "--primary-url", "http://primary:8000"]
+  replica2:
+    build: .
+    environment:
+      RAILSEAT_ROLE: replica
+      RAILSEAT_DB: /data/replica2.db
+      NODE_URL: http://replica2:8002
+      PRIMARY_URL: http://primary:8000
+      PORT: "8002"
+    volumes:
+      - railseat:/data
+    depends_on:
+      - primary
+    command: ["python", "-m", "app.servers.replica", "--role", "replica", "--db", "/data/replica2.db", "--port", "8002", "--node-url", "http://replica2:8002", "--primary-url", "http://primary:8000"]
+  replica3:
+    build: .
+    environment:
+      RAILSEAT_ROLE: replica
+      RAILSEAT_DB: /data/replica3.db
+      NODE_URL: http://replica3:8003
+      PRIMARY_URL: http://primary:8000
+      PORT: "8003"
+    volumes:
+      - railseat:/data
+    depends_on:
+      - primary
+    command: ["python", "-m", "app.servers.replica", "--role", "replica", "--db", "/data/replica3.db", "--port", "8003", "--node-url", "http://replica3:8003", "--primary-url", "http://primary:8000"]
+  router:
+    build: .
+    environment:
+      PRIMARY_URL: http://primary:8000
+      REPLICA_URLS: http://replica1:8001,http://replica2:8002,http://replica3:8003
+      RAILSEAT_CLUSTER: /data/cluster.json
+      ROUTER_PORT: "8080"
+    volumes:
+      - railseat:/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - primary
+      - replica1
+      - replica2
+      - replica3
+    command: ["python", "-m", "app.servers.router"]
+
+volumes:
+  railseat:

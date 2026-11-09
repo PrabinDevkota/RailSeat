@@ -1,0 +1,26 @@
+[
+  {
+    "strategy": "random",
+    "booked": 40,
+    "match_rate": 0.35,
+    "mean_view": 2.225
+  },
+  {
+    "strategy": "first",
+    "booked": 40,
+    "match_rate": 0.35,
+    "mean_view": 2.337
+  },
+  {
+    "strategy": "L1",
+    "booked": 40,
+    "match_rate": 0.725,
+    "mean_view": 3.35
+  },
+  {
+    "strategy": "L2",
+    "booked": 40,
+    "match_rate": 0.725,
+    "mean_view": 3.35
+  }
+]

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% set label = {
+  'HELD': 'On hold',
+  'CONFIRMED': 'Confirmed',
+  'CANCELLED': 'Cancelled',
+  'COMPLETED': 'Completed',
+  'EXPIRED': 'Expired'
+} %}
+{% block body %}
+<div id="ticket" data-booking="{{ b.booking_id }}">
+  <article class="stub">
+    <div class="stub-main">
+      <p class="kicker">{{ b.train_no }} · {{ label.get(b.status, b.status) }}</p>
+      <h1>{{ b.train_name }}</h1>
+      <div class="leg">
+        <div>
+          <strong>{{ b.board_time or b.origin.dep or '—' }}</strong>
+          <span>{{ b.board_date or b.run_date }}</span>
+          <em>{{ b.origin.name }} ({{ b.origin.code }})</em>
+        </div>
+        <div class="dur">{{ b.duration or '' }}<span>{{ 'right' if b.travel_side == 'R' else 'left' }} side{% if b.distance_km %} · {{ b.distance_km|int }} km{% endif %}</span></div>
+        <div class="arr">
+          <strong>{{ b.alight_time or b.dest.arr or '—' }}</strong>
+          <span>{{ b.alight_date or b.run_date }}</span>
+          <em>{{ b.dest.name }} ({{ b.dest.code }})</em>
+        </div>
+      </div>
+    </div>
+    <div class="stub-side">
+      <p class="kicker">Booking</p>
+      <p class="pnr">RS{{ '%06d'|format(b.booking_id) }}</p>
+      <p>{{ b.coach_no }} · {{ b.coach_class }}</p>
+      <p class="berth-line">{{ b.seat_no }} {{ b.berth_type }}</p>
+      <p class="fare-line">₹{{ '%.0f'|format(b.fare) }}</p>
+      {% if b.run_status == 'CANCELLED' %}<p class="status can">Train cancelled</p>{% endif %}
+      {% if b.downloadable %}
+      <a class="ghost" href="/ticket/{{ b.booking_id }}/pdf">Download PDF</a>
+      {% elif b.status == 'CANCELLED' %}
+      <p class="quiet">No ticket. This booking is cancelled.</p>
+      {% else %}
+      <p class="quiet">The PDF is available after you pay.</p>
+      {% endif %}
+    </div>
+  </article>
+  {% if b.explain %}<p class="note">{{ b.explain }}</p>{% endif %}
+  {% if b.status == 'HELD' and b.hold_expires_at %}
+    <p class="warn" id="clock" data-until="{{ b.hold_expires_at }}">Hold running</p>
+  {% endif %}
+
+  <div class="split">
+    <section class="panel pad">
+      <h2>Payment</h2>
+      {% if not b.payment %}
+        <p class="note">Nothing has moved yet. Paying places ₹{{ '%.0f'|format(b.fare) }} in escrow. It is captured after the journey and a 24 hour dispute window.</p>
+        <button class="solid" id="pay" type="button">Pay ₹{{ '%.0f'|format(b.fare) }}</button>
+      {% else %}
+        <p class="note">{{ b.payment.state }} · reference {{ b.payment.gateway_ref or '—' }}</p>
+        <table class="table">
+          <thead><tr><th>Account</th><th>Note</th><th class="num">Amount</th></tr></thead>
+          <tbody>
+          {% for row in b.ledger %}
+            <tr>
+              <td>{{ row.account }}</td>
+              <td>{{ row.note or '' }}</td>
+              <td class="num {% if row.amount < 0 %}neg{% endif %}">{{ '%.2f'|format(row.amount) }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+      {% if b.status in ('HELD', 'CONFIRMED') and (not b.payment or b.payment.state == 'HELD') %}
+        <p class="cancel-row"><button class="ghost" id="cancel" type="button">Cancel booking</button></p>
+        <p class="quiet">Before departure: 48h or more refunds the full fare, 12–48h refunds 75%, 4–12h refunds 50%, under 4h refunds 25%. After departure there is no refund.</p>
+      {% endif %}
+    </section>
+
+    <section class="panel pad">
+      {% if b.status == 'COMPLETED' and not b.rating %}
+        <h2>Rate this berth</h2>
+        <p class="quiet">Only a completed journey can be rated, and only once.</p>
+        <form id="rate" class="stack">
+          <div class="star-pick">
+            <input type="radio" name="stars" id="s5" value="5" checked>
+            <label for="s5">★</label>
+            <input type="radio" name="stars" id="s4" value="4">
+            <label for="s4">★</label>
+            <input type="radio" name="stars" id="s3" value="3">
+            <label for="s3">★</label>
+            <input type="radio" name="stars" id="s2" value="2">
+            <label for="s2">★</label>
+            <input type="radio" name="stars" id="s1" value="1">
+            <label for="s1">★</label>
+          </div>
+          <label class="check"><input type="checkbox" name="tag" value="good_view"> Good view</label>
+          <label class="check"><input type="checkbox" name="tag" value="broken_window"> Broken window</label>
+          <label class="check"><input type="checkbox" name="tag" value="no_socket"> No charging point</label>
+          <label class="check"><input type="checkbox" name="tag" value="near_toilet"> Near the toilet</label>
+          <label class="check"><input type="checkbox" name="tag" value="noisy"> Noisy</label>
+          <label class="check"><input type="checkbox" name="tag" value="too_sunny"> Too sunny</label>
+          <button class="solid" type="submit">Submit rating</button>
+        </form>
+      {% elif b.rating %}
+        <h2>You rated this {{ b.rating.stars }} / 5</h2>
+      {% endif %}
+
+      {% if b.payment and b.payment.state in ('HELD', 'CAPTURED') and b.status in ('CONFIRMED', 'COMPLETED') %}
+        <h2 class="gap">Dispute</h2>
+        {% if b.run_status == 'CANCELLED' %}<p class="note">This run is cancelled. Raising a dispute refunds the full fare.</p>{% endif %}
+        <form id="dispute" class="stack">
+          <label>Reason
+            <select name="reason">
+              <option value="TRAIN_CANCELLED">Train cancelled</option>
+              <option value="COACH_NOT_ATTACHED">Coach not attached</option>
+              <option value="SEAT_UNUSABLE">Seat unusable</option>
+              <option value="WRONG_DESCRIPTION">Wrong description</option>
+            </select>
+          </label>
+          <label>What happened <textarea name="detail" required></textarea></label>
+          <label>Photo, optional <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif"></label>
+          <button class="solid" type="submit">Raise dispute</button>
+        </form>
+      {% endif %}
+      {% if b.status == 'CONFIRMED' %}
+        <h2 class="gap">Offer this berth</h2>
+        <p class="quiet">Send the other passenger's booking number. They accept in Messages. Both tickets must be confirmed on this train, and quota rules still apply.</p>
+        <form id="swap-offer" class="stack">
+          <label>Their booking number <input name="other_booking_id" inputmode="numeric" required placeholder="4524 or RS004524"></label>
+          <button class="solid" type="submit">Send offer</button>
+        </form>
+      {% endif %}
+      {% if b.dispute %}
+        <p class="note">Dispute {{ b.dispute.dispute_id }} is {{ b.dispute.status }}{% if b.decision %} · {{ b.decision.outcome }} · {{ b.decision.reason }}{% endif %}.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

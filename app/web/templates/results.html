@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% set names = {'SL': 'Sleeper', '3A': 'AC 3-tier', '2A': 'AC 2-tier', '1A': 'AC first'} %}
+{% block body %}
+{% include "search_form.html" %}
+
+<p class="kicker">{{ query['from'] }} to {{ query.to }}</p>
+<h1>{% if suggested %}No train on {{ query.date }}. Next running date is {{ suggested }}.{% else %}{{ query.date }}{% endif %}</h1>
+
+{% if unknown %}
+  <p class="banner bad">No station matches {{ unknown|join(' or ') }}. Use a code such as CSMT, PUNE, MAO, SBC or MAJN, or the station name.</p>
+{% elif same %}
+  <p class="banner bad">Origin and destination are the same station.</p>
+{% elif not results %}
+  <p class="lede">No train joins those stations. Mumbai CSMT to Pune is CSMT to PUNE.</p>
+{% endif %}
+
+<div class="board">
+  {% for train in results %}
+  <article class="service {% if not train.bookable %}closed{% endif %}">
+    <div class="service-id">
+      <span class="tno">{{ train.train_no }}</span>
+      <p class="kicker">{{ train.route_name }}</p>
+      <h2>{{ train.train_name }}</h2>
+      {% if train.coach_orientation == -1 %}<p class="meta">Rake reversed on this run</p>{% endif %}
+      {% if not train.bookable %}<p class="status can">{{ train.status }}</p>{% endif %}
+    </div>
+    <div class="leg">
+      <div>
+        <strong>{{ train.dep or '—' }}</strong>
+        <span>{{ train.from_code }}</span>
+        <em>{{ train.from_name }}</em>
+      </div>
+      <div class="dur">{{ train.duration }}<span>{{ train.distance_km|int }} km</span></div>
+      <div class="arr">
+        <strong>{{ train.arr or '—' }}</strong>
+        <span>{{ train.to_code }}</span>
+        <em>{{ train.to_name }}</em>
+      </div>
+    </div>
+    <div class="av">
+      {% for cls in train.classes %}
+      <div class="av-cell {% if cls.free == 0 %}none{% endif %}">
+        <span>{{ cls.code }}</span>
+        <strong>{% if train.bookable %}{{ cls.free }}{% else %}—{% endif %}</strong>
+        <em>₹{{ '%.0f'|format(cls.fare) }}</em>
+      </div>
+      {% endfor %}
+    </div>
+    {% if train.bookable %}
+    <a class="solid" href="/runs/{{ train.run_id }}?from_idx={{ train.from_idx }}&to_idx={{ train.to_idx }}">Select berth</a>
+    {% else %}
+    <a class="ghost" href="/runs/{{ train.run_id }}?from_idx={{ train.from_idx }}&to_idx={{ train.to_idx }}">View coach</a>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+<p class="note">Availability is free berths on your segment, excluding broken berths and maintenance flags. Ladies and senior quotas are included in the count and marked on the coach.</p>
+{% endblock %}

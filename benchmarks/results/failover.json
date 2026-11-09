@@ -1,0 +1,9 @@
+{
+  "recovery_seconds": 5.158,
+  "primary_lsn": 149,
+  "promoted_port": 9101,
+  "promoted_lsn_at_kill": 149,
+  "lost_lsns": 0,
+  "write_after_promote": 200,
+  "role_after": "primary"
+}

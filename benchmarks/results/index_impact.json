@@ -1,0 +1,7 @@
+{
+  "rows": 200000,
+  "before_ms": 9.6354,
+  "after_ms": 0.4415,
+  "before_plan": "2 0 0 SCAN lock_probe",
+  "after_plan": "3 0 0 SEARCH lock_probe USING INDEX idx_probe (run_id=? AND segment_idx=?)"
+}

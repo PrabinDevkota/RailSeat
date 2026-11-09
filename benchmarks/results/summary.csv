@@ -1,0 +1,11 @@
+experiment,strategy,booked,match_rate,mean_view,replicas,reads,writes,errors,seconds,reads_per_second,rows,before_ms,after_ms,before_plan,after_plan,recovery_seconds,primary_lsn,promoted_port,promoted_lsn_at_kill,lost_lsns,write_after_promote,role_after
+allocation,random,40.0,0.35,2.225,,,,,,,,,,,,,,,,,,
+allocation,first,40.0,0.35,2.337,,,,,,,,,,,,,,,,,,
+allocation,L1,40.0,0.725,3.35,,,,,,,,,,,,,,,,,,
+allocation,L2,40.0,0.725,3.35,,,,,,,,,,,,,,,,,,
+read_scaling,,,,,0.0,24.0,0.0,0.0,2.5,9.6,,,,,,,,,,,,
+read_scaling,,,,,1.0,72.0,0.0,0.0,2.5,28.8,,,,,,,,,,,,
+read_scaling,,,,,2.0,133.0,8.0,0.0,2.5,53.2,,,,,,,,,,,,
+read_scaling,,,,,3.0,132.0,8.0,0.0,2.5,52.8,,,,,,,,,,,,
+index_impact,,,,,,,,,,,200000.0,9.6354,0.4415,2 0 0 SCAN lock_probe,3 0 0 SEARCH lock_probe USING INDEX idx_probe (run_id=? AND segment_idx=?),,,,,,,
+failover,,,,,,,,,,,,,,,,5.158,149.0,9101.0,149.0,0.0,200.0,primary

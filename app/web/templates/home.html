@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>Where are you going?</h1>
+<p class="lede">Choose a route and a date. Then pick the berth by the side it faces. The fare stays in escrow until the journey is over.</p>
+
+{% include "search_form.html" %}
+
+<section class="route-grid" aria-label="Popular routes">
+  <a class="route-tile" href="/search?from=CSMT&to=PUNE&date={{ when }}">
+    <strong>Mumbai to Pune</strong>
+    <em>Deccan and the afternoon Intercity</em>
+  </a>
+  <a class="route-tile" href="/search?from=CSMT&to=MAO&date={{ when }}">
+    <strong>Mumbai to Madgaon</strong>
+    <em>Konkan, sea on the right</em>
+  </a>
+  <a class="route-tile" href="/search?from=CSMT&to=SBC&date={{ when }}">
+    <strong>Mumbai to Bengaluru</strong>
+    <em>Overnight via Pune and Hubballi</em>
+  </a>
+  <a class="route-tile" href="/search?from=PUNE&to=CSMT&date={{ when }}">
+    <strong>Pune to Mumbai</strong>
+    <em>Morning Sahyadri, afternoon Deccan</em>
+  </a>
+  <a class="route-tile" href="/search?from=SBC&to=MYS&date={{ when }}">
+    <strong>Bengaluru to Mysuru</strong>
+    <em>Chamundi, a short morning run</em>
+  </a>
+  <a class="route-tile" href="/search?from=MAO&to=MAJN&date={{ when }}">
+    <strong>Madgaon to Mangaluru</strong>
+    <em>Karwar and the Udupi coast</em>
+  </a>
+</section>
+
+{% if upcoming %}
+<section class="board">
+  <div class="board-head">
+    <h2>Upcoming departures</h2>
+    <p>Scheduled runs from tomorrow onward. Times are illustrative.</p>
+  </div>
+  {% for run in upcoming %}
+  <a class="board-row" href="/search?from={{ run.from_code }}&to={{ run.to_code }}&date={{ run.run_date }}">
+    <span class="tno">{{ run.train_no }}</span>
+    <span class="board-name">
+      <strong>{{ run.train_name }}</strong>
+      <em>{{ run.route_name }}</em>
+    </span>
+    <span class="when">
+      <strong>{{ run.dep or '—' }}</strong>
+      <em>{{ run.from_code }}</em>
+    </span>
+    <span class="hop" aria-hidden="true">→</span>
+    <span class="when arr">
+      <strong>{{ run.arr or '—' }}</strong>
+      <em>{{ run.to_code }}</em>
+    </span>
+    <span class="date">{{ run.run_date }}</span>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if not user %}
+<section class="panel" id="sign-in">
+  <h2>Sign in</h2>
+  <p class="note">Demo password is railseat. Meera opens the arbitrator queue. <a href="/signup">Create an account</a> if you are new.</p>
+  {% if error %}<p class="banner bad">{{ error }}</p>{% endif %}
+  <form id="login" method="post" action="/login" class="stack">
+    <label>Email <input name="email" type="email" required value="asha@railseat.dev" autocomplete="username"></label>
+    <label>Password <input name="password" type="password" required value="railseat" autocomplete="current-password"></label>
+    <button class="solid" type="submit">Sign in</button>
+  </form>
+  <div class="row-actions">
+    <button class="ghost" type="button" data-email="asha@railseat.dev">Asha</button>
+    <button class="ghost" type="button" data-email="ravi@railseat.dev">Ravi</button>
+    <button class="ghost" type="button" data-email="meera@railseat.dev">Meera</button>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
